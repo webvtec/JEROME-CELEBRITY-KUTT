@@ -360,6 +360,31 @@
 </head>
 
 <body>
+
+  <!-- ===== CHECKING ACCESS OVERLAY ===== -->
+  <div id="accessOverlay" style="
+    position:fixed;inset:0;z-index:99999;
+    background:#1a1a1a;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:24px;">
+    <div style="font-family:'Bebas Neue',cursive;font-size:42px;letter-spacing:6px;color:#C8A84B;">CHECKING ACCESS</div>
+    <div style="display:flex;gap:10px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#C8A84B;animation:dotpulse 1.2s ease-in-out infinite;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#C8A84B;animation:dotpulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#C8A84B;animation:dotpulse 1.2s ease-in-out 0.8s infinite;display:inline-block;"></span>
+    </div>
+    <div id="accessStatus" style="font-family:'Barlow',sans-serif;font-size:14px;color:#888;letter-spacing:1px;">VERIFYING IDENTITY...</div>
+  </div>
+  <style>
+    @keyframes dotpulse {
+      0%,100%{opacity:0.2;transform:scale(0.8);}
+      50%{opacity:1;transform:scale(1.2);}
+    }
+    #dashboardContent{display:none;}
+  </style>
+
+  <div id="dashboardContent">
   <div class="header-bar">JEROME CELEBRITY ✂ — ADMIN</div>
 
   <div class="top-menu">
@@ -573,7 +598,7 @@
         () => {
           // Upload complete — get download URL
           uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-            return db.collection('gallery').add({ url: downloadURL, category: category });
+            return db.collection('gallery').add({ url: downloadURL, category: category, uploadedAt: firebase.firestore.FieldValue.serverTimestamp() });
           }).then(() => {
             showToast('✅ Photo uploaded successfully!');
             // Reset form
@@ -601,7 +626,7 @@
       const galleryContainer = document.getElementById('adminGallery');
       galleryContainer.innerHTML = '';
 
-      db.collection('gallery').onSnapshot((querySnapshot) => {
+      db.collection('gallery').orderBy('uploadedAt', 'asc').onSnapshot((querySnapshot) => {
         galleryContainer.innerHTML = '';
 
         if (querySnapshot.empty) {
@@ -963,31 +988,48 @@
     }
 
     // ========== ADMIN UID GUARD ==========
-    // Must match the same UID in index.html
     const ADMIN_UID = "nIwRfcHc7Of6ahl0Qj0M2QWtPTc2";
 
-    // ========== AUTH GUARD ==========
+    // ========== AUTH GUARD WITH OVERLAY ==========
     firebase.auth().onAuthStateChanged(user => {
+      const overlay = document.getElementById('accessOverlay');
+      const status  = document.getElementById('accessStatus');
+      const content = document.getElementById('dashboardContent');
+
       if (!user) {
-        // Not signed in at all — back to index
-        window.location.href = 'index.html';
+        status.textContent = 'ACCESS DENIED — REDIRECTING...';
+        status.style.color = '#e53935';
+        setTimeout(() => { window.location.href = 'index.html'; }, 1200);
         return;
       }
 
       if (user.uid !== ADMIN_UID) {
-        // Signed in but NOT the authorised admin — sign out and redirect
+        status.textContent = 'UNAUTHORISED — SIGNING OUT...';
+        status.style.color = '#e53935';
         firebase.auth().signOut().then(() => {
-          window.location.href = 'index.html';
+          setTimeout(() => { window.location.href = 'index.html'; }, 1200);
         });
         return;
       }
 
-      // ✅ Verified admin — load dashboard
+      // Verified admin — reveal dashboard
+      status.textContent = 'ACCESS GRANTED';
+      status.style.color = '#4CAF50';
+      setTimeout(() => {
+        overlay.style.transition = 'opacity 0.4s';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          content.style.display = 'block';
+        }, 400);
+      }, 600);
+
       loadGallery();
       showSection('reservationsPage');
       loadReservations();
       loadUnavailableDates();
     });
   </script>
+  </div><!-- end #dashboardContent -->
 </body>
 </html>
