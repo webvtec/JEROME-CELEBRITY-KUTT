@@ -626,7 +626,7 @@
       const galleryContainer = document.getElementById('adminGallery');
       galleryContainer.innerHTML = '';
 
-      db.collection('gallery').orderBy('uploadedAt', 'asc').onSnapshot((querySnapshot) => {
+      db.collection('gallery').orderBy('uploadedAt', 'desc').onSnapshot((querySnapshot) => {
         galleryContainer.innerHTML = '';
 
         if (querySnapshot.empty) {

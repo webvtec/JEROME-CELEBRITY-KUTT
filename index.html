@@ -696,7 +696,7 @@
     const galleryContainer = document.getElementById(containerId);
     galleryContainer.innerHTML = '';
 
-    db.collection('gallery').orderBy('uploadedAt', 'asc').onSnapshot((querySnapshot) => {
+    db.collection('gallery').orderBy('uploadedAt', 'desc').onSnapshot((querySnapshot) => {
       galleryContainer.innerHTML = '';
       const categories = {};
 
